@@ -1,27 +1,25 @@
-# Official Puppeteer image (Isme Chrome pehle se hota hai)
-FROM ghcr.io/puppeteer/puppeteer:latest
+# Python base image
+FROM python:3.9-slim
 
-# Root user permissions
-USER root
+# System updates aur Node.js install karo
+# (Kyunki script ko 'node' command chahiye Kwik decrypt karne ke liye)
+RUN apt-get update && \
+    apt-get install -y nodejs npm && \
+    apt-get clean
 
 # Working directory
 WORKDIR /app
 
-# 🔥 FIX: Humne 'executable_path' wali line HATA DI hai.
-# Ab Puppeteer khud sahi wala Chrome dhund lega.
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+# Python dependencies install karo
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Files copy karo
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Baaki files copy
+# Code copy karo
 COPY . .
 
-# Port
-EXPOSE 3000
+# Port set karo
+ENV PORT=10000
+EXPOSE 10000
 
-# Start command
-CMD ["node", "index.js"]
+# Start Command (Uvicorn server chalayega)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000"]
