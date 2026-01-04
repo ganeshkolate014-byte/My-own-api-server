@@ -1,19 +1,20 @@
+# Official Puppeteer image (Isme Chrome pehle se hota hai)
 FROM ghcr.io/puppeteer/puppeteer:latest
 
-# Root user permissions taaki error na aaye
+# Root user permissions
 USER root
 
 # Working directory
 WORKDIR /app
 
-# 🔥 MAGIC LINES: Chrome download skip karo (RAM Bachayega)
+# 🔥 FIX: Humne 'executable_path' wali line HATA DI hai.
+# Ab Puppeteer khud sahi wala Chrome dhund lega.
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
 # Files copy karo
 COPY package*.json ./
 
-# Ab npm install chalega lekin Chrome download nahi karega (Bahut Fast hoga)
+# Install dependencies
 RUN npm install
 
 # Baaki files copy
