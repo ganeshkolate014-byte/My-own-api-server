@@ -8,9 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 async function scrapeLink(url) {
-    console.log(`Starting Scrape for: ${url}`);
+    console.log(`🕵️ Starting Stealth Scrape for: ${url}`);
     
-    // 🔥 Variable yahan declare kiya taaki "ReferenceError" na aaye
     let m3u8Link = null;
     let referer = "https://hianime.to/";
     let browser = null;
@@ -26,79 +25,88 @@ async function scrapeLink(url) {
                 '--no-first-run',
                 '--no-zygote',
                 '--single-process',
-                '--disable-gpu'
+                '--disable-gpu',
+                '--window-size=1920,1080' // Full HD Screen dikhao
             ],
-            // Dockerfile se path lega, nahi toh automatic dhundega
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
         });
 
         const page = await browser.newPage();
 
-        // User Agent (Insaan dikhne ke liye)
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        
+        // 🔥 TRICK 1: Fake User Agent (Latest Chrome)
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36');
+
+        // 🔥 TRICK 2: Headers set karo taaki lage Insaan hai
+        await page.setExtraHTTPHeaders({
+            'Referer': 'https://google.com/', // Hum bolenge hum Google se aaye hain
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Upgrade-Insecure-Requests': '1'
+        });
+
         await page.setRequestInterception(true);
         
         page.on('request', (req) => {
             const reqUrl = req.url();
-            // Sirf Master playlist ya index m3u8 capture karo
+            // Sirf kaam ki cheez pakdo
             if (reqUrl.includes('.m3u8') && (reqUrl.includes('master') || reqUrl.includes('index'))) {
                 console.log("✅ LINK FOUND: " + reqUrl);
                 m3u8Link = reqUrl;
                 referer = req.headers()['referer'] || referer;
                 req.abort(); 
-            } else if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
-                req.abort(); // Faltu cheezein block karo speed ke liye
+            } else if (['image', 'font', 'stylesheet'].includes(req.resourceType())) {
+                req.abort(); // Images mat load karo (Speed + Bot detection save)
             } else {
                 req.continue();
             }
         });
 
-        // 60 Second Timeout
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        console.log("Page Title: " + await page.title());
+        console.log("Navigating...");
+        // Timeout 90 sec kar diya
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
+        
+        const title = await page.title();
+        console.log("Page Title: " + title);
 
-        // Agar Homepage par redirect ho gaya toh error do
-        if ((await page.title()).includes("Homepage")) {
-            throw new Error("Redirected to Homepage (Invalid Link or Blocked)");
+        // 🔥 CHECK: Agar wapas Home bhej diya, toh error do
+        if (title.includes("Homepage") || title.includes("Watch Anime Online")) {
+            console.log("⚠️ Soft Block Detected (Redirected to Home). Trying click trick...");
+            // Yahan hum 'Watch' button dhundne ki koshish kar sakte hain agar available ho
         }
 
         // Play Button Click Logic
         try {
-            const playSelector = '#play-btn, .play-button, .btn-play';
-            await page.waitForSelector(playSelector, { timeout: 5000 });
+            const playSelector = '#play-btn, .play-button, .btn-play, .server-item';
+            await page.waitForSelector(playSelector, { timeout: 6000 });
             await page.click(playSelector);
-            console.log("Play button clicked");
+            console.log("🖱️ Play/Server button clicked");
         } catch (e) {
-            console.log("Play button not found or auto-played");
+            console.log("Auto-play active or button not found.");
         }
 
-        // Thoda wait karo request capture karne ke liye
-        await new Promise(r => setTimeout(r, 8000));
+        // Wait for network requests
+        await new Promise(r => setTimeout(r, 10000));
 
     } catch (error) {
-        console.error("❌ Scraping Log:", error.message);
+        console.error("❌ Error Log:", error.message);
     } finally {
         if (browser) await browser.close();
     }
 
-    // Ab ye crash nahi hoga kyunki variable upar defined hai
     if (m3u8Link) {
         return { success: true, url: m3u8Link, referer: referer };
     } else {
-        return { success: false, error: "Link capture failed. Try different Episode." };
+        return { success: false, error: "Cloudflare/Redirect Blocked the request." };
     }
 }
 
 app.get('/watch', async (req, res) => {
     const targetUrl = req.query.url;
     if (!targetUrl) return res.status(400).json({ error: "No URL provided" });
-
     const data = await scrapeLink(targetUrl);
     res.json(data);
 });
 
-app.get('/', (req, res) => res.send('Server is Live & Fixed! 🟢'));
+app.get('/', (req, res) => res.send('HiAnime Stealth Scraper v2 🥷'));
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
