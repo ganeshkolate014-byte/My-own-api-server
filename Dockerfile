@@ -13,7 +13,7 @@ COPY package*.json ./
 
 # Dependencies install karo
 # --ignore-scripts zaroori hai taaki puppeteer fir se chrome download na kare
-RUN npm ci --ignore-scripts
+RUN npm install
 
 # Baaki files copy karo
 COPY . .
