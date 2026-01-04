@@ -1,15 +1,15 @@
 {
   "name": "hianime-scraper",
   "version": "1.0.0",
-  "description": "Puppeteer Scraper for Render",
+  "description": "Puppeteer Scraper",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "puppeteer": "^21.5.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "express": "latest",
+    "puppeteer": "latest",
+    "puppeteer-extra": "latest",
+    "puppeteer-extra-plugin-stealth": "latest"
   }
 }
