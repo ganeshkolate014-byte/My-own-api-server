@@ -1,25 +1,26 @@
-# Official Puppeteer image use kar rahe hain
-# Isme Chrome already installed hota hai, isliye crash nahi hoga
 FROM ghcr.io/puppeteer/puppeteer:latest
 
-# Root user ban jao taaki permissions ka issue na ho
+# Root user permissions taaki error na aaye
 USER root
 
-# Working Directory set karo
+# Working directory
 WORKDIR /app
+
+# 🔥 MAGIC LINES: Chrome download skip karo (RAM Bachayega)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
 # Files copy karo
 COPY package*.json ./
 
-# Dependencies install karo
-# --ignore-scripts zaroori hai taaki puppeteer fir se chrome download na kare
+# Ab npm install chalega lekin Chrome download nahi karega (Bahut Fast hoga)
 RUN npm install
 
-# Baaki files copy karo
+# Baaki files copy
 COPY . .
 
-# Port expose karo
+# Port
 EXPOSE 3000
 
-# Server start karo
+# Start command
 CMD ["node", "index.js"]
